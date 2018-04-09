@@ -7,6 +7,8 @@ import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.wifi.WifiManager;
+import android.net.wifi.WpsInfo;
+import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pDevice;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.net.wifi.p2p.WifiP2pManager.Channel;
@@ -19,9 +21,6 @@ import android.util.Log;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Created by User on 04-04-2018.
- */
 
 public class p2p extends Service{
 
@@ -119,7 +118,7 @@ public class p2p extends Service{
                 new WifiP2pManager.DnsSdServiceResponseListener() {
 
                     @Override
-                    public void onDnsSdServiceAvailable(String instanceName,
+                    public void onDnsSdServiceAvailable(final String instanceName,
                                                         String registrationType, WifiP2pDevice srcDevice) {
 
                         // A service has been discovered. Is this our app?
@@ -131,7 +130,43 @@ public class p2p extends Service{
                                 service.instanceName = instanceName;
                                 service.serviceRegistrationType = registrationType;
                                 Log.d(TAG, "instanceName" + instanceName+"srcDevice"+srcDevice+"registrationType"+registrationType);
+//                            try {
+//                                wait(1000);
+                                WifiP2pConfig config = new WifiP2pConfig();
+                                config.deviceAddress = service.device.deviceAddress;
+                                config.wps.setup = WpsInfo.PBC;
+                                if (serviceRequest != null)
+                                    manager.removeServiceRequest(channel, serviceRequest,
+                                            new WifiP2pManager.ActionListener() {
 
+                                                @Override
+                                                public void onSuccess() {
+                                                    Log.i("discoverService","Connect P2p is successfull");
+                                                }
+
+                                                @Override
+                                                public void onFailure(int arg0) {
+                                                    Log.i("discoverService","Connect p2p failed");
+                                                }
+                                            });
+
+                                manager.connect(channel, config, new WifiP2pManager.ActionListener() {
+
+                                    @Override
+                                    public void onSuccess() {
+                                        Log.i("discoverService","Connecting to service to -" +instanceName);
+
+                                    }
+
+                                    @Override
+                                    public void onFailure(int errorCode) {
+                                        Log.i("discoverService","Failed connecting to service");
+                                    }
+                                });
+
+//                            } catch (InterruptedException e) {
+//                                e.printStackTrace();
+//                            }
                         }
 
                     }
@@ -181,6 +216,8 @@ public class p2p extends Service{
             }
         });
     }
+
+
 
     @Override
     public void onDestroy() {

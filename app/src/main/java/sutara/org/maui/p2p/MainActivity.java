@@ -14,7 +14,7 @@ import static android.content.ContentValues.TAG;
 
 public class MainActivity extends Activity {
 
-    private Button start,stop;
+//    private Button start,stop;
 
 
 

@@ -12,9 +12,9 @@ import android.widget.Button;
 
 import static android.content.ContentValues.TAG;
 
-public class MainActivity extends Activity {
+public class MainActivity extends Activity implements View.OnClickListener {
 
-//    private Button start,stop;
+    private Button start,stop;
 
 
 
@@ -24,28 +24,28 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
 
 
-        startService(new Intent(this,p2p.class));
-        finish();
+//        startService(new Intent(this,p2p.class));
+//        finish();
 
-//        start=(Button) findViewById(R.id.buttonStart);
-//        stop=(Button) findViewById(R.id.buttonStop);
-//
-//        start.setOnClickListener(this);
-//        stop.setOnClickListener(this);
+        start=(Button) findViewById(R.id.buttonStart);
+        stop=(Button) findViewById(R.id.buttonStop);
+
+        start.setOnClickListener(this);
+        stop.setOnClickListener(this);
     }
 
-//    @Override
-//    public void onClick(View view) {
-//        switch (view.getId()){
-//            case R.id.buttonStart:
-//                startService(new Intent(this,p2p.class));
-//                break;
-//            case R.id.buttonStop:
-//                stopService(new Intent(this,p2p.class));
-//                break;
-//
-//        }
-//    }
+    @Override
+    public void onClick(View view) {
+        switch (view.getId()){
+            case R.id.buttonStart:
+                startService(new Intent(this,p2p.class));
+                break;
+            case R.id.buttonStop:
+                stopService(new Intent(this,p2p.class));
+                break;
+
+        }
+    }
 
     @Override
     protected void onStart() {

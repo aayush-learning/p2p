@@ -68,6 +68,7 @@ public class p2p extends Service {
         registerReceiver(receiver, intentFilter);
 
         RegisterAndDiscover();
+
         return START_STICKY;
     }
 
@@ -161,17 +162,30 @@ private void CreateAndDiscoverGroup(){
         @Override
         public void onConnectionInfoAvailable(WifiP2pInfo wifiP2pInfo) {
             Log.i(TAG," requestConnectionInfo " +wifiP2pInfo.toString());
+            disconnect();
         }
     });
+
 
 }
 
 
 private void disconnect(){
         try{
-//            TimeUnit.SECONDS.sleep(5);
+            TimeUnit.SECONDS.sleep(5);
             Log.i("Disconnection","Try method");
+            manager.cancelConnect(channel, new WifiP2pManager.ActionListener() {
+                @Override
+                public void onSuccess() {
+                    Log.i(TAG,"cancel Connect Service");
+                }
 
+                @Override
+                public void onFailure(int i) {
+                    Log.i(TAG,"cancel Connect Failure");
+                }
+            });
+//            unregisterReceiver(receiver);
         }catch (Exception e){
             Log.i("Disconnection","Failed to disconnect: "+e);
         }
@@ -182,9 +196,9 @@ private void disconnect(){
     @Override
     public void onDestroy() {
         Log.i("p2p service","onDestroy");
-
-        unregisterReceiver(receiver);
-
+        if(receiver!=null) {
+            unregisterReceiver(receiver);
+        }
         manager.clearLocalServices(channel, new WifiP2pManager.ActionListener() {
             @Override
             public void onSuccess() {

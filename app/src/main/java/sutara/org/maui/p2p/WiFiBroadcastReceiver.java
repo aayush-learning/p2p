@@ -26,7 +26,7 @@ public class WiFiBroadcastReceiver extends BroadcastReceiver {
         this.channel = channel;
         this.activity = activity;
     }
-    
+
     @Override
     public void onReceive(Context context, Intent intent) {
         String action = intent.getAction();
@@ -50,13 +50,10 @@ public class WiFiBroadcastReceiver extends BroadcastReceiver {
                     .getParcelableExtra(WifiP2pManager.EXTRA_NETWORK_INFO);
 
             if (networkInfo.isConnected()) {
-
-                // we are connected with the other device, request connection
-                // info to find group owner IP
-                Log.d(p2p.TAG,
-                        "Connected to p2p network");
+                Log.d(p2p.TAG,"Connected to p2p network");
             } else {
                 Log.d(p2p.TAG,"Not Connected to any p2p network");
+
             }
         } else if (WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION.equals(action)) {
             // Respond to this device's wifi state changing

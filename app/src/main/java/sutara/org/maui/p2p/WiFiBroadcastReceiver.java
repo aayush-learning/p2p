@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.NetworkInfo;
 import android.net.wifi.p2p.WifiP2pDevice;
+import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Handler;
 import android.os.Looper;
@@ -36,6 +37,14 @@ public class WiFiBroadcastReceiver extends BroadcastReceiver {
             Log.d(p2p.TAG, "WiFiDirectBroadcastReceiver==WIFI_P2P_STATE_CHANGED_ACTION");
             Log.d(p2p.TAG,context+" and "+intent);
 
+            // Determine if Wifi P2P mode is enabled or not, alert
+            // the Activity.
+            int state = intent.getIntExtra(WifiP2pManager.EXTRA_WIFI_STATE, -1);
+            if (state == WifiP2pManager.WIFI_P2P_STATE_ENABLED) {
+                p2p.isWifiP2pEnabled(true);
+            } else {
+                p2p.isWifiP2pEnabled(false);
+            }
 
 
         } else if (WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION.equals(action)) {
@@ -51,8 +60,16 @@ public class WiFiBroadcastReceiver extends BroadcastReceiver {
 
             if (networkInfo.isConnected()) {
                 Log.d(p2p.TAG,"Connected to p2p network");
+                manager.requestConnectionInfo(channel, new WifiP2pManager.ConnectionInfoListener() {
+                    @Override
+                    public void onConnectionInfoAvailable(WifiP2pInfo wifiP2pInfo) {
+                        Log.i("ConnInfoAvailable",wifiP2pInfo.toString());
+                    }
+                });
             } else {
                 Log.d(p2p.TAG,"Not Connected to any p2p network");
+                p2p.disconnect();
+                p2p.RegisterAndDiscover();
 
             }
         } else if (WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION.equals(action)) {

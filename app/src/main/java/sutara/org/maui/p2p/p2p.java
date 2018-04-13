@@ -13,10 +13,12 @@ import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.net.wifi.p2p.nsd.WifiP2pDnsSdServiceInfo;
 import android.net.wifi.p2p.nsd.WifiP2pDnsSdServiceRequest;
+import android.net.wifi.p2p.nsd.WifiP2pServiceRequest;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
 import android.util.Log;
 import android.content.Context;
+import android.widget.Toast;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -25,20 +27,23 @@ import java.util.concurrent.TimeUnit;
 
 public class p2p extends Service {
 
+
     final static String TAG="P2P";
 
     public static final String TXTRECORD_PROP_AVAILABLE = "available";
     public static final String SERVICE_INSTANCE = "_WiFiP2p";
     public static final String SERVICE_REG_TYPE = "_chimple._tcp";
 
-    WifiP2pDnsSdServiceInfo service;
+    static WifiP2pDnsSdServiceInfo service;
 
-    WifiP2pManager manager;
-    WifiP2pManager.Channel channel;
+    static WifiP2pManager manager;
+    static WifiP2pManager.Channel channel;
+
+    static WifiP2pServiceRequest req;
     private BroadcastReceiver receiver = null;
-    private WifiP2pDnsSdServiceRequest serviceRequest;
+    static private WifiP2pDnsSdServiceRequest serviceRequest;
 
-    WiFiP2pService wifiservice = new WiFiP2pService();
+    static WiFiP2pService wifiservice = new WiFiP2pService();
     private final IntentFilter intentFilter = new IntentFilter();
 
 
@@ -69,11 +74,11 @@ public class p2p extends Service {
 
         RegisterAndDiscover();
 
-        return START_STICKY;
+        return START_NOT_STICKY;
     }
 
 
-private void RegisterAndDiscover(){
+public static void RegisterAndDiscover(){
     Map<String, String> record = new HashMap<String, String>();
     record.put(TXTRECORD_PROP_AVAILABLE, "visible");
 
@@ -83,17 +88,57 @@ private void RegisterAndDiscover(){
         @Override
         public void onSuccess() {
             Log.i(TAG,"successfully added local service");
+//            Toast.makeText(p2p.this, "successfully added local service",
+//                    Toast.LENGTH_SHORT).show();
         }
 
         @Override
         public void onFailure(int i) {
             Log.i(TAG,"Failed to added local service; Error Code:"+i);
+//            Toast.makeText(p2p.this, "Failed to added local service; Error Code:"+i,
+//                    Toast.LENGTH_SHORT).show();
         }
     });
-    CreateAndDiscoverGroup();
+
+    DiscoverGroupService();
+//    CreateGroup();
 }
 
-private void CreateAndDiscoverGroup(){
+//private void CreateGroup(){
+//        if(manager!=null||channel!=null){
+//            manager.removeGroup(channel, new WifiP2pManager.ActionListener() {
+//                @Override
+//                public void onSuccess() {
+//                    Log.i("removeGroup","successfully removeGroup");
+//                }
+//
+//                @Override
+//                public void onFailure(int i) {
+//                    Log.i("removeGroup","Failed removeGroup; Error Code:"+i);
+//                }
+//            });
+//        }
+//        manager.createGroup(channel, new WifiP2pManager.ActionListener() {
+//            @Override
+//            public void onSuccess() {
+//                Log.i("Creategroup","created group successfully");
+//            }
+//
+//            @Override
+//            public void onFailure(int i) {
+//                Log.i("Creategroup","onFailure to create group ");
+//            }
+//        });
+//
+//        manager.requestConnectionInfo(channel, new WifiP2pManager.ConnectionInfoListener() {
+//            @Override
+//            public void onConnectionInfoAvailable(WifiP2pInfo wifiP2pInfo) {
+//                Log.i("onConnInfoAvailable",wifiP2pInfo.toString());
+//            }
+//        });
+//}
+
+public static void DiscoverGroupService(){
 
         manager.setDnsSdResponseListeners(channel,
                 new WifiP2pManager.DnsSdServiceResponseListener() {
@@ -104,13 +149,18 @@ private void CreateAndDiscoverGroup(){
                             String registrationType,
                             WifiP2pDevice srcDevice) {
                             Log.i(TAG,"onDnsSdServiceAvailable");
-                            if (wifiservice==null||wifiservice.device!=srcDevice){
+//                        Toast.makeText(p2p.this, "onDnsSdServiceAvailable", Toast.LENGTH_SHORT).show();
+
+                        if (instanceName.equalsIgnoreCase(SERVICE_INSTANCE)) {
+
                                 wifiservice.device = srcDevice;
                                 wifiservice.instanceName = instanceName;
                                 wifiservice.serviceRegistrationType = registrationType;
                                 WifiP2pConfig config=new WifiP2pConfig();
                                 config.deviceAddress=srcDevice.deviceAddress;
                                 config.wps.setup=WpsInfo.PBC;
+                                // this gives the priority to be a group owner.
+//                                config.groupOwnerIntent=15;
                                 manager.connect(channel, config, new WifiP2pManager.ActionListener() {
                                     @Override
                                     public void onSuccess() {
@@ -122,6 +172,7 @@ private void CreateAndDiscoverGroup(){
                                         Log.i("connection","Failed to connect");
                                     }
                                 });
+
                             }
                     }
                 }, new WifiP2pManager.DnsSdTxtRecordListener() {
@@ -131,6 +182,7 @@ private void CreateAndDiscoverGroup(){
                             Map<String, String> record,
                             WifiP2pDevice device) {
                         Log.d(TAG,device.deviceName + " is "+ record.get(TXTRECORD_PROP_AVAILABLE));
+//                        Toast.makeText(p2p.this, device.deviceName + " is "+ record.get(TXTRECORD_PROP_AVAILABLE), Toast.LENGTH_SHORT).show();
                     }
                 });
 
@@ -139,11 +191,13 @@ private void CreateAndDiscoverGroup(){
         @Override
         public void onSuccess() {
             Log.i(TAG,"Added service discovery request");
+//            Toast.makeText(p2p.this, "Added service discovery request", Toast.LENGTH_SHORT).show();
         }
 
         @Override
         public void onFailure(int i) {
             Log.i(TAG,"Failed to add Service request. Reason :" + i);
+//            Toast.makeText(p2p.this, "Failed to add Service request. Reason :" + i, Toast.LENGTH_SHORT).show();
         }
     });
 
@@ -151,44 +205,75 @@ private void CreateAndDiscoverGroup(){
         @Override
         public void onSuccess() {
             Log.i(TAG,"Service discovery initialized");
+//            Toast.makeText(p2p.this, "Service discovery initialized", Toast.LENGTH_SHORT).show();
         }
 
         @Override
         public void onFailure(int i) {
             Log.i(TAG,"Failure to initialized discovery");
+//            Toast.makeText(p2p.this, "Failure to initialized discovery", Toast.LENGTH_SHORT).show();
         }
     });
-    manager.requestConnectionInfo(channel, new WifiP2pManager.ConnectionInfoListener() {
-        @Override
-        public void onConnectionInfoAvailable(WifiP2pInfo wifiP2pInfo) {
-            Log.i(TAG," requestConnectionInfo " +wifiP2pInfo.toString());
-            disconnect();
-        }
-    });
+//    manager.requestConnectionInfo(channel, new WifiP2pManager.ConnectionInfoListener() {
+//        @Override
+//        public void onConnectionInfoAvailable(WifiP2pInfo wifiP2pInfo) {
+//            Log.i(TAG," requestConnectionInfo " +wifiP2pInfo.toString());
+//            disconnect();
+//        }
+//    });
 
 
 }
 
 
-private void disconnect(){
-        try{
-            TimeUnit.SECONDS.sleep(5);
-            Log.i("Disconnection","Try method");
-            manager.cancelConnect(channel, new WifiP2pManager.ActionListener() {
-                @Override
-                public void onSuccess() {
-                    Log.i(TAG,"cancel Connect Service");
-                }
-
-                @Override
-                public void onFailure(int i) {
-                    Log.i(TAG,"cancel Connect Failure");
-                }
-            });
-//            unregisterReceiver(receiver);
-        }catch (Exception e){
-            Log.i("Disconnection","Failed to disconnect: "+e);
+public static void disconnect(){
+    manager.cancelConnect(channel, new WifiP2pManager.ActionListener() {
+        @Override
+        public void onSuccess() {
+            Log.i("cancelConnect","onDestroy");
         }
+
+        @Override
+        public void onFailure(int i) {
+            Log.i("cancelConnect","onFailure onDestroy");
+        }
+    });
+    //The service information can be cleared and removed.
+//    manager.removeLocalService(channel, service, new WifiP2pManager.ActionListener() {
+//        @Override
+//        public void onSuccess() {
+//            Log.i("removeLocalService","onDestroy");
+//        }
+//
+//        @Override
+//        public void onFailure(int i) {
+//            Log.i("removeLocalService","onFailure onDestroy");
+//        }
+//    });
+    //request has to be cleared or else multiple request will be appearing when we restart the service
+    manager.clearServiceRequests(channel, new WifiP2pManager.ActionListener() {
+        @Override
+        public void onSuccess() {
+            Log.i("clearServiceRequests","onDestroy");
+        }
+
+        @Override
+        public void onFailure(int i) {
+            Log.i("clearServiceRequests","onFailure onDestroy");
+        }
+    });
+    //removing the group is good because there will be no issue after service is ended.
+    manager.removeGroup(channel, new WifiP2pManager.ActionListener() {
+        @Override
+        public void onSuccess() {
+            Log.i("removeGroup","onDestroy");
+        }
+
+        @Override
+        public void onFailure(int i) {
+            Log.i("removeGroup","onFailure onDestroy");
+        }
+    });
 }
 
 
@@ -196,20 +281,31 @@ private void disconnect(){
     @Override
     public void onDestroy() {
         Log.i("p2p service","onDestroy");
+
         if(receiver!=null) {
             unregisterReceiver(receiver);
         }
-        manager.clearLocalServices(channel, new WifiP2pManager.ActionListener() {
+
+
+        //cancelling the connection from other device is important
+        manager.cancelConnect(channel, new WifiP2pManager.ActionListener() {
             @Override
             public void onSuccess() {
-                Log.i("clearLocalServices","onDestroy");
+                Log.i("cancelConnect","onDestroy");
             }
 
             @Override
             public void onFailure(int i) {
-                Log.i("clearLocalServices","onFailure onDestroy");
+                Log.i("cancelConnect","onFailure onDestroy");
             }
         });
+
+
+
+
+
+
+        //The service information can be cleared and removed.
         manager.removeLocalService(channel, service, new WifiP2pManager.ActionListener() {
             @Override
             public void onSuccess() {
@@ -221,6 +317,7 @@ private void disconnect(){
                 Log.i("removeLocalService","onFailure onDestroy");
             }
         });
+        //request has to be cleared or else multiple request will be appearing when we restart the service
         manager.clearServiceRequests(channel, new WifiP2pManager.ActionListener() {
             @Override
             public void onSuccess() {
@@ -232,6 +329,7 @@ private void disconnect(){
                 Log.i("clearServiceRequests","onFailure onDestroy");
             }
         });
+        //removing the group is good because there will be no issue after service is ended.
         manager.removeGroup(channel, new WifiP2pManager.ActionListener() {
             @Override
             public void onSuccess() {
@@ -244,5 +342,11 @@ private void disconnect(){
             }
         });
         super.onDestroy();
+    }
+
+    public static void isWifiP2pEnabled(boolean b) {
+        WifiP2pDevice device=new WifiP2pDevice();
+        Log.i("isWifiP2pEnabled","WiFi P2P:"+b+device);
+//        Toast.makeText(null, "isWifiP2pEnabled: WiFi P2P:"+b, Toast.LENGTH_SHORT).show();
     }
 }
